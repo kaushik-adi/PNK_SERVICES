@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIP Calculator</title>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --accent-returns: #10b981;
+      --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .calculator-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+      width: 100%;
+      max-width: 860px;
+      padding: 32px;
+    }
+
+    .calculator-header {
+      margin-bottom: 28px;
+    }
+
+    .calculator-header h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .calculator-header p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .calculator-body {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 40px;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .calculator-body {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .inputs-container {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .input-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .input-label-row label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .input-box {
+      display: flex;
+      align-items: center;
+      background-color: #f1f5f9;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 6px 12px;
+      width: 140px;
+    }
+
+    .input-box input {
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: right;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .currency-symbol, .unit-symbol {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #e2e8f0;
+      outline: none;
+    }
+
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .slider::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    .results-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 12px;
+      padding-top: 20px;
+      border-top: 1px dashed var(--border-color);
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.95rem;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+    }
+
+    .stat-value {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .stat-value.highlight-green {
+      color: var(--accent-returns);
+    }
+
+    .stat-item.total-item {
+      font-size: 1.1rem;
+      margin-top: 6px;
+    }
+
+    .stat-item.total-item .stat-value {
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+
+    .chart-container {
+      position: relative;
+      width: 100%;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="calculator-card">
+    <div class="calculator-header">
+      <h2>SIP Calculator</h2>
+      <p>Calculate the future value of your systematic investments</p>
+    </div>
+
+    <div class="calculator-body">
+      <!-- Input Controls -->
+      <div class="inputs-container">
+        
+        <!-- Monthly Investment -->
+        <div class="input-group">
+          <div class="input-label-row">
+            <label for="monthly-amount">Monthly Investment</label>
+            <div class="input-box">
+              <span class="currency-symbol">$</span>
+              <input type="number" id="monthly-amount" value="10000" min="500" max="1000000" step="500" />
+            </div>
+          </div>
+          <input type="range" id="monthly-range" value="10000" min="500" max="1000000" step="500" class="slider" />
+        </div>
+
+        <!-- Expected Return Rate -->
+        <div class="input-group">
+          <div class="input-label-row">
+            <label for="return-rate">Expected Annual Return</label>
+            <div class="input-box">
+              <input type="number" id="return-rate" value="12" min="1" max="30" step="0.5" />
+              <span class="unit-symbol">%</span>
+            </div>
+          </div>
+          <input type="range" id="return-range" value="12" min="1" max="30" step="0.5" class="slider" />
+        </div>
+
+        <!-- Time Horizon -->
+        <div class="input-group">
+          <div class="input-label-row">
+            <label for="investment-period">Time Horizon</label>
+            <div class="input-box">
+              <input type="number" id="investment-period" value="10" min="1" max="40" step="1" />
+              <span class="unit-symbol">Yr</span>
+            </div>
+          </div>
+          <input type="range" id="period-range" value="10" min="1" max="40" step="1" class="slider" />
+        </div>
+
+        <!-- Breakdown Statistics -->
+        <div class="results-stats">
+          <div class="stat-item">
+            <span class="stat-label">Invested Amount</span>
+            <span class="stat-value" id="invested-amount-display">$0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Est. Returns</span>
+            <span class="stat-value highlight-green" id="est-returns-display">$0</span>
+          </div>
+          <div class="stat-item total-item">
+            <span class="stat-label">Total Future Value</span>
+            <span class="stat-value" id="total-value-display">$0</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Donut Chart -->
+      <div class="chart-container">
+        <canvas id="sipChart"></canvas>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const monthlyInput = document.getElementById("monthly-amount");
+    const monthlyRange = document.getElementById("monthly-range");
+
+    const returnInput = document.getElementById("return-rate");
+    const returnRange = document.getElementById("return-range");
+
+    const periodInput = document.getElementById("investment-period");
+    const periodRange = document.getElementById("period-range");
+
+    const investedDisplay = document.getElementById("invested-amount-display");
+    const returnsDisplay = document.getElementById("est-returns-display");
+    const totalDisplay = document.getElementById("total-value-display");
+
+    let sipChart;
+
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0
+      }).format(amount);
+    }
+
+    function syncInputs(textEl, rangeEl) {
+      textEl.addEventListener("input", () => {
+        rangeEl.value = textEl.value;
+        calculateSIP();
+      });
+
+      rangeEl.addEventListener("input", () => {
+        textEl.value = rangeEl.value;
+        calculateSIP();
+      });
+    }
+
+    syncInputs(monthlyInput, monthlyRange);
+    syncInputs(returnInput, returnRange);
+    syncInputs(periodInput, periodRange);
+
+    function calculateSIP() {
+      const P = parseFloat(monthlyInput.value) || 0;
+      const annualRate = parseFloat(returnInput.value) || 0;
+      const years = parseFloat(periodInput.value) || 0;
+
+      const i = annualRate / 12 / 100;
+      const n = years * 12;
+
+      const investedAmount = P * n;
+
+      let totalFutureValue = 0;
+      if (i > 0) {
+        totalFutureValue = P * ((Math.pow(1 + i, n) - 1) / i) * (1 + i);
+      } else {
+        totalFutureValue = investedAmount;
+      }
+
+      const estimatedReturns = totalFutureValue - investedAmount;
+
+      investedDisplay.textContent = formatCurrency(investedAmount);
+      returnsDisplay.textContent = formatCurrency(estimatedReturns);
+      totalDisplay.textContent = formatCurrency(totalFutureValue);
+
+      updateChart(investedAmount, estimatedReturns);
+    }
+
+    function updateChart(invested, returns) {
+      const ctx = document.getElementById("sipChart").getContext("2d");
+
+      if (sipChart) {
+        sipChart.data.datasets[0].data = [invested, returns];
+        sipChart.update();
+      } else {
+        sipChart = new Chart(ctx, {
+          type: "doughnut",
+          data: {
+            labels: ["Invested Amount", "Est. Returns"],
+            datasets: [
+              {
+                data: [invested, returns],
+                backgroundColor: ["#cbd5e1", "#10b981"],
+                borderWidth: 0,
+                hoverOffset: 4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  usePointStyle: true,
+                  font: { size: 12 }
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    return ` ${context.label}: ${formatCurrency(context.raw)}`;
+                  }
+                }
+              }
+            },
+            cutout: "70%"
+          }
+        });
+      }
+    }
+
+    calculateSIP();
+  </script>
+</body>
+</html>
